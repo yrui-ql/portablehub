@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "pixel-dark",
+  "name": "像素暗夜",
+  "author": "portablehub",
+  "vars": {
+    "--ph-bg": "#0a0806",
+    "--ph-bg-alt": "#0e0a07",
+    "--ph-panel": "#15100c",
+    "--ph-panel-hover": "#1d1610",
+    "--ph-border": "#33291f",
+    "--ph-border-light": "#4a3b2b",
+    "--ph-accent": "#f0b64b",
+    "--ph-accent-2": "#8fa4ad",
+    "--ph-danger": "#d46450",
+    "--ph-text": "#eee7db",
+    "--ph-text-muted": "#c0b3a2",
+    "--ph-shadow": "#050403",
+    "--ph-shadow-offset": "2px",
+    "--ph-radius": "0px",
+    "--ph-border-width": "1px",
+    "--ph-font": "'Segoe UI Variable', 'Segoe UI', system-ui, 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', sans-serif",
+    "--ph-font-pixel": "'FusionPixel', 'Microsoft YaHei UI', monospace",
+    "--ph-font-size": "13px",
+    "--ph-image-rendering": "auto"
+  },
+  "css": ".ph-card.selected { outline: 1px solid var(--ph-accent); outline-offset: 1px; }"
+}

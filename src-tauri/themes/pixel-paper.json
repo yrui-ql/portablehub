@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "pixel-paper",
+  "name": "暖纸陈列",
+  "author": "portablehub",
+  "vars": {
+    "--ph-bg": "#e7dfd0",
+    "--ph-bg-alt": "#f1eadf",
+    "--ph-panel": "#f7f1e6",
+    "--ph-panel-hover": "#efe6d8",
+    "--ph-border": "#c9bca8",
+    "--ph-border-light": "#a99982",
+    "--ph-accent": "#8a5c1b",
+    "--ph-accent-2": "#526a78",
+    "--ph-danger": "#a23f30",
+    "--ph-text": "#1c1a17",
+    "--ph-text-muted": "#4c463c",
+    "--ph-shadow": "#c9bca8",
+    "--ph-shadow-offset": "2px",
+    "--ph-radius": "0px",
+    "--ph-border-width": "1px",
+    "--ph-font": "'Segoe UI Variable', 'Segoe UI', system-ui, 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', sans-serif",
+    "--ph-font-pixel": "'FusionPixel', 'Microsoft YaHei UI', monospace",
+    "--ph-font-size": "13px",
+    "--ph-image-rendering": "auto"
+  },
+  "css": ".ph-card.selected { outline: 1px solid var(--ph-accent); outline-offset: 1px; }"
+}

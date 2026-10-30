@@ -1,0 +1,47 @@
+[package]
+name = "portablehub"
+version = "1.14.0"
+description = "PortableHub - portable software manager"
+authors = ["local"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "portablehub_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+winreg = "0.55"
+win-icon-extractor = "0.3"
+image = { version = "0.25", default-features = false, features = ["png"] }
+base64 = "0.22"
+sha1 = "0.10"
+uuid = { version = "1", features = ["v4"] }
+dunce = "1"
+thiserror = "2"
+walkdir = "2"
+log = "0.4"
+# AI provider HTTP client. Default features are off (no OpenSSL); rustls only.
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+# ShellExecuteW("runas") for the "run as administrator" launch path (BUG-0023).
+# 0.59 is already in Cargo.lock (transitive), so no new crate version is pulled.
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_System_Diagnostics_ToolHelp"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+

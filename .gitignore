@@ -1,0 +1,21 @@
+# dependencies and build output
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# local runtime data (belongs to the product folder, not the repo)
+config.json
+config.json.bak
+_cache/
+Apps/
+Themes/*.local.json
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+*.log
+
+# e2e artifacts
+test-results/
+playwright-report/

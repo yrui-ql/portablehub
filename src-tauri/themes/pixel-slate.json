@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "pixel-slate",
+  "name": "冷灰索引",
+  "author": "portablehub",
+  "vars": {
+    "--ph-bg": "#263538",
+    "--ph-bg-alt": "#1f2c2f",
+    "--ph-panel": "#2f4246",
+    "--ph-panel-hover": "#3a5054",
+    "--ph-border": "#4e6468",
+    "--ph-border-light": "#6a8185",
+    "--ph-accent": "#f0b64b",
+    "--ph-accent-2": "#c2d6d2",
+    "--ph-danger": "#e08572",
+    "--ph-text": "#eef4f3",
+    "--ph-text-muted": "#c6d4d1",
+    "--ph-shadow": "#172124",
+    "--ph-shadow-offset": "2px",
+    "--ph-radius": "0px",
+    "--ph-border-width": "1px",
+    "--ph-font": "'Segoe UI Variable', 'Segoe UI', system-ui, 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', sans-serif",
+    "--ph-font-pixel": "'FusionPixel', 'Microsoft YaHei UI', monospace",
+    "--ph-font-size": "13px",
+    "--ph-image-rendering": "auto"
+  },
+  "css": ".ph-card.selected { outline: 1px solid var(--ph-accent); outline-offset: 1px; }"
+}

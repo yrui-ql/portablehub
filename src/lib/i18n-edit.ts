@@ -1,0 +1,53 @@
+// 应用编辑对话框文案（REQ-0013）。由该特性的实现者维护。
+// key 以 edit. 开头。
+export const enEdit: Record<string, string> = {
+  'edit.title': 'Edit app',
+  'edit.name': 'Name',
+  'edit.nameRequired': 'Name is required',
+  'edit.category': 'Category',
+  'edit.path': 'Program path',
+  'edit.pathRequired': 'Program path is required',
+  'edit.pathHint': 'Browse picks the containing folder and keeps the current file name; finish the executable name yourself.',
+  'edit.pathHintLabel': 'Path help',
+  'edit.browse': 'Browse…',
+  'edit.args': 'Launch arguments',
+  'edit.argsHint': 'Separated by whitespace. Quoted arguments containing spaces are not supported yet.',
+  'edit.argsHintLabel': 'Arguments help',
+  'edit.workDir': 'Working directory',
+  'edit.workDirHint': 'Leave empty to use the program folder.',
+  'edit.workDirHintLabel': 'Working directory help',
+  'edit.save': 'Save',
+  'edit.saving': 'Saving…',
+  'edit.cancel': 'Cancel',
+  'edit.saveFailed': 'Save failed: {error}',
+  'edit.saved': 'Saved {name}',
+  'edit.runAsAdmin': 'Run as administrator',
+  'edit.runAsAdminHint': 'Shows a UAC prompt on every launch. Use it for tools that change drivers, registry or network settings.',
+  'edit.runAsAdminHintLabel': 'Administrator help'
+}
+
+export const zhEdit: Record<string, string> = {
+  'edit.title': '编辑应用',
+  'edit.name': '名称',
+  'edit.nameRequired': '名称不能为空',
+  'edit.category': '分类',
+  'edit.path': '主程序路径',
+  'edit.pathRequired': '主程序路径不能为空',
+  'edit.pathHint': '「浏览」只能选文件夹，会保留当前文件名；请自行补全可执行文件名。',
+  'edit.pathHintLabel': '路径说明',
+  'edit.browse': '浏览…',
+  'edit.args': '启动参数',
+  'edit.argsHint': '以空白分隔；暂不支持含空格参数的引号写法。',
+  'edit.argsHintLabel': '参数说明',
+  'edit.workDir': '工作目录',
+  'edit.workDirHint': '留空则使用程序所在目录。',
+  'edit.workDirHintLabel': '工作目录说明',
+  'edit.save': '保存',
+  'edit.saving': '保存中…',
+  'edit.cancel': '取消',
+  'edit.saveFailed': '保存失败：{error}',
+  'edit.saved': '已保存 {name}',
+  'edit.runAsAdmin': '以管理员身份运行',
+  'edit.runAsAdminHint': '每次启动都会弹出 UAC 授权。适用于需要改驱动、注册表或网络设置的工具。',
+  'edit.runAsAdminHintLabel': '管理员运行说明'
+}

@@ -1,0 +1,790 @@
+@font-face {
+  font-family: 'FusionPixel';
+  src: url('./assets/fonts/fusion-pixel-12px-proportional-zh_hans.otf.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --ph-bg: #0a0806;
+  --ph-bg-alt: #0e0a07;
+  --ph-panel: #15100c;
+  --ph-panel-hover: #1d1610;
+  --ph-border: #33291f;
+  --ph-border-light: #4a3b2b;
+  --ph-accent: #f0b64b;
+  --ph-accent-2: #8fa4ad;
+  --ph-danger: #d46450;
+  --ph-text: #eee7db;
+  --ph-text-muted: #c0b3a2;
+  --ph-shadow: #050403;
+  --ph-shadow-offset: 2px;
+  --ph-radius: 0px;
+  --ph-border-width: 1px;
+  --ph-font: 'Segoe UI Variable', 'Segoe UI', system-ui, 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --ph-font-pixel: 'FusionPixel', 'Microsoft YaHei UI', monospace;
+  --ph-font-size: 13px;
+  --ph-image-rendering: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--ph-bg);
+  color: var(--ph-text);
+  font-family: var(--ph-font);
+  font-size: var(--ph-font-size);
+  line-height: 1.55;
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  accent-color: var(--ph-accent);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ph-accent) 35%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ph-border);
+  border: 3px solid var(--ph-bg);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ph-border-light);
+}
+
+/* ---------- title bar ---------- */
+.ph-titlebar {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 0 0 14px;
+  background: var(--ph-bg-alt);
+  border-bottom: var(--ph-border-width) solid var(--ph-border);
+  gap: 8px;
+}
+
+.ph-title {
+  font-family: var(--ph-font-pixel);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ph-text);
+  flex: 1;
+}
+
+.ph-wbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ph-radius);
+  background: transparent;
+  cursor: pointer;
+  color: var(--ph-text-muted);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.ph-wbtn:hover {
+  background: var(--ph-panel-hover);
+  color: var(--ph-text);
+}
+
+.ph-wbtn.close:hover {
+  background: var(--ph-danger);
+  color: #fff;
+}
+
+/* ---------- toolbar ---------- */
+.ph-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: var(--ph-border-width) solid var(--ph-border);
+  background: var(--ph-bg);
+}
+
+/* BUG-0022: the main toolbar may wrap controls, but the scan candidate bar
+   relies on staying on one row so its badge list scrolls (BUG-0008 AC-B8-4). */
+.ph-toolbar:not(.ph-candidates) {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.ph-group-mode {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.ph-search-wrap {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+}
+
+.ph-search-wrap > .ph-icon-svg {
+  position: absolute;
+  left: 10px;
+  color: var(--ph-text-muted);
+  pointer-events: none;
+}
+
+.ph-search {
+  flex: 1;
+  width: 100%;
+  height: 32px;
+  padding: 0 32px 0 32px;
+  background: var(--ph-panel);
+  border: var(--ph-border-width) solid var(--ph-border);
+  border-radius: var(--ph-radius);
+  outline: none;
+  box-shadow: 0 1px 2px var(--ph-shadow);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ph-input-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--ph-panel-hover);
+  color: var(--ph-text-muted);
+  cursor: pointer;
+}
+
+.ph-input-clear:hover {
+  color: var(--ph-text);
+}
+
+.ph-search:focus {
+  border-color: var(--ph-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-accent) 22%, transparent);
+}
+
+/* ---------- candidate bar (toolbar "Scan") ---------- */
+/* Many/long candidates must never push "Add all / Ignore" out of the window
+   (BUG-0008 AC-B8-4): the badge list wraps and scrolls, the actions stay put. */
+.ph-candidates {
+  align-items: center;
+}
+
+.ph-candidate-count {
+  flex: 0 0 auto;
+}
+
+.ph-candidate-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 4px 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 72px;
+  overflow-y: auto;
+}
+
+.ph-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  height: 32px;
+  padding: 0 11px;
+  background: var(--ph-panel);
+  border: var(--ph-border-width) solid var(--ph-border);
+  border-radius: var(--ph-radius);
+  box-shadow: 0 1px 2px var(--ph-shadow);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.ph-btn:hover {
+  background: var(--ph-panel-hover);
+  border-color: var(--ph-border-light);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px var(--ph-shadow);
+}
+
+.ph-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px var(--ph-shadow);
+}
+
+.ph-btn:focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 2px;
+}
+
+.ph-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.ph-btn.accent {
+  border-color: var(--ph-accent);
+  color: var(--ph-accent);
+}
+
+.ph-btn .ph-icon-svg {
+  flex: 0 0 auto;
+  opacity: 0.9;
+}
+
+/* ---------- grid ---------- */
+.ph-content {
+  height: calc(100% - 36px);
+  display: flex;
+  flex-direction: column;
+}
+
+.ph-grid-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px 26px;
+}
+
+/* Source-group layout for the main screen (REQ-0022). */
+.ph-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ph-main .ph-grid-wrap {
+  min-width: 0;
+}
+
+.ph-group {
+  margin-bottom: 22px;
+}
+
+.ph-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 5px;
+  border-bottom: var(--ph-border-width) solid var(--ph-border);
+  color: var(--ph-text);
+  font-family: var(--ph-font-pixel);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.ph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+  gap: 8px;
+}
+
+.ph-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+  height: 126px;
+  padding: 12px;
+  background: var(--ph-panel);
+  border: var(--ph-border-width) solid var(--ph-border);
+  border-radius: var(--ph-radius);
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+  text-align: left;
+}
+
+.ph-card.selected {
+  border-color: var(--ph-accent);
+  background: var(--ph-panel-hover);
+  outline: 1px solid var(--ph-accent);
+  outline-offset: 0;
+}
+
+.ph-card:hover {
+  background: var(--ph-panel-hover);
+  border-color: var(--ph-border-light);
+}
+
+.ph-card:active {
+  transform: translateY(1px);
+}
+
+.ph-icon {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  image-rendering: var(--ph-image-rendering);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ph-bg-alt);
+  border: var(--ph-border-width) solid var(--ph-border-light);
+  border-radius: var(--ph-radius);
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.ph-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: var(--ph-image-rendering);
+}
+
+html[data-pixel-icons='true'] .ph-icon,
+html[data-pixel-icons='true'] .ph-icon img {
+  image-rendering: pixelated;
+}
+
+.ph-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--ph-font-pixel);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Inline by default: list rows and the candidate bar reuse .ph-badge and must
+   NOT be pinned to the window's top-right corner (BUG-0008). */
+.ph-badge {
+  white-space: nowrap;
+  font-family: var(--ph-font-pixel);
+  font-size: 11px;
+  padding: 0 4px;
+  border: 1px solid var(--ph-border);
+  background: var(--ph-bg-alt);
+  color: var(--ph-text-muted);
+}
+
+/* Only card status badges (autostart / missing) keep the corner treatment.
+   .ph-card is position: relative, so this resolves against the card. */
+.ph-card .ph-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.ph-badge.on {
+  border-color: var(--ph-accent-2);
+  color: var(--ph-accent-2);
+}
+
+.ph-badge.missing {
+  border-color: var(--ph-danger);
+  color: var(--ph-danger);
+}
+
+/* ---------- empty / toast ---------- */
+.ph-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ph-text-muted);
+}
+
+.ph-empty .big {
+  font-size: 28px;
+  color: var(--ph-border-light);
+}
+
+.ph-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: var(--ph-bg-alt);
+  border: var(--ph-border-width) solid var(--ph-accent);
+  box-shadow: 4px 4px 0 var(--ph-shadow);
+  z-index: 60;
+  max-width: 70vw;
+}
+
+.ph-toast.error {
+  border-color: var(--ph-danger);
+}
+
+/* ---------- context menu ---------- */
+.ph-menu {
+  position: fixed;
+  min-width: 176px;
+  background: var(--ph-panel);
+  border: var(--ph-border-width) solid var(--ph-border);
+  border-radius: var(--ph-radius);
+  box-shadow: 0 10px 30px var(--ph-shadow);
+  z-index: 50;
+  padding: 5px;
+}
+
+.ph-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ph-menu-item:hover {
+  background: var(--ph-panel-hover);
+  color: var(--ph-accent);
+}
+
+.ph-menu-label {
+  padding: 2px 10px 4px;
+  color: var(--ph-text-muted);
+  font-size: 10px;
+}
+
+.ph-menu-quick-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ph-menu-mark {
+  width: 12px;
+  color: var(--ph-accent);
+  text-align: center;
+}
+
+.ph-menu-sep {
+  height: 2px;
+  margin: 4px 0;
+  background: var(--ph-border);
+}
+
+/* ---------- settings ---------- */
+.ph-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.62);
+  backdrop-filter: blur(3px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ph-settings {
+  display: flex;
+  flex-direction: column;
+  width: min(780px, 94vw);
+  height: min(86vh, 700px);
+  overflow: hidden;
+  background: var(--ph-bg);
+  border: var(--ph-border-width) solid var(--ph-border-light);
+  border-radius: var(--ph-radius);
+  box-shadow: 0 24px 60px var(--ph-shadow);
+}
+
+.ph-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: var(--ph-border-width) solid var(--ph-border);
+  background: var(--ph-bg-alt);
+}
+
+.ph-settings-head strong {
+  font-family: var(--ph-font-pixel);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- settings section nav (REQ-0012) ---------- */
+.ph-settings-body {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.ph-settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 10px;
+  overflow-y: auto;
+  background: var(--ph-bg-alt);
+  border-right: var(--ph-border-width) solid var(--ph-border);
+}
+
+.ph-settings-nav-item {
+  display: block;
+  width: 100%;
+  padding: 7px 11px;
+  border: 0;
+  background: transparent;
+  color: var(--ph-text-muted);
+  font-family: var(--ph-font-pixel);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.ph-settings-nav-item:hover {
+  background: var(--ph-panel-hover);
+  color: var(--ph-text);
+}
+
+html[data-pixel-font='true'] body {
+  font-family: var(--ph-font-pixel);
+  font-size: 12px;
+}
+
+html[data-pixel-font='true'] button,
+html[data-pixel-font='true'] input,
+html[data-pixel-font='true'] select {
+  font-family: var(--ph-font-pixel);
+}
+
+.ph-settings-nav-item.active {
+  background: transparent;
+  color: var(--ph-accent);
+}
+
+.ph-settings-nav-item.active::before {
+  content: '▸ ';
+}
+.ph-settings-content {
+  min-width: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .ph-settings-body {
+    grid-template-columns: 118px minmax(0, 1fr);
+  }
+
+  .ph-settings-nav {
+    padding: 8px 6px;
+  }
+
+  .ph-settings-nav-item {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+}
+
+.ph-section {
+  padding: 16px;
+  border-bottom: var(--ph-border-width) solid var(--ph-border);
+}
+
+.ph-section h3 {
+  margin: 0 0 12px;
+  font-family: var(--ph-font-pixel);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ph-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.ph-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.ph-row label,
+.ph-row .ph-label {
+  min-width: 96px;
+  color: var(--ph-text-muted);
+}
+
+.ph-select,
+.ph-input {
+  flex: 1;
+  min-width: 180px;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--ph-panel);
+  border: var(--ph-border-width) solid var(--ph-border);
+  border-radius: var(--ph-radius);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.ph-select:focus,
+.ph-input:focus {
+  border-color: var(--ph-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-accent) 22%, transparent);
+}
+
+.ph-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ph-accent);
+}
+
+.ph-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ph-scope-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ph-discover {
+  width: min(920px, 94vw);
+}
+
+.ph-discover-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.ph-discover-list {
+  max-height: 46vh;
+  overflow-y: auto;
+  border: var(--ph-border-width) solid var(--ph-border);
+  background: var(--ph-panel);
+}
+
+.ph-discover-row {
+  display: grid;
+  grid-template-columns: 20px 1.2fr auto auto 2fr;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ph-border);
+  cursor: pointer;
+}
+
+.ph-discover-row:hover {
+  background: var(--ph-panel-hover);
+}
+
+.ph-discover-name {
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ph-discover-size {
+  color: var(--ph-text-muted);
+  text-align: right;
+}
+
+.ph-discover-path {
+  color: var(--ph-text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ph-hint {
+  color: var(--ph-text-muted);
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+
+.ph-danger {
+  color: var(--ph-danger);
+}
+
+/* ---------- scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ph-bg-alt);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ph-border);
+  border: 3px solid var(--ph-bg-alt);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ph-border-light);
+}
+
+/* ---------- accessibility (BUG-0015) ---------- */
+
+/* Keyboard focus must always be visible; the pixel theme otherwise hides it. */
+:where(button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ph-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(*, *::before, *::after) {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
