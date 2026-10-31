@@ -17,12 +17,15 @@
     initialRoots,
     existingNames,
     scanning,
+    folderScanning,
+    scanKind,
     cancelled,
     busy,
     progress,
     report,
     t,
     onscan,
+    onfolderscan,
     oncancel,
     onrescan,
     onclose,
@@ -36,6 +39,8 @@
     initialRoots: string[]
     existingNames: string[]
     scanning: boolean
+    folderScanning: boolean
+    scanKind: 'discover' | 'folder'
     /** The last scan was cancelled but kept a partial result set. */
     cancelled: boolean
     busy: boolean
@@ -43,6 +48,7 @@
     report: ImportReport | null
     t: Translator
     onscan: (roots: string[]) => void
+    onfolderscan: () => void
     oncancel: () => void
     onrescan: () => void
     onclose: () => void
@@ -90,6 +96,10 @@
   })
 
   $effect(() => {
+    if (scanKind === 'folder') mode = 'register'
+  })
+
+  $effect(() => {
     if (!rootsReady && drives.length) {
       rootsReady = true
       const saved = new Set(initialRoots)
@@ -127,9 +137,15 @@
     })
   )
   let chosen = $derived(visible.filter((item) => selected[item.path]))
+  let mergedCount = $derived(items.reduce((sum, item) => sum + (item.duplicateCount ?? 0), 0))
   // REQ-0021: groups derive from the filtered set, so groups whose visible items
-  // are all filtered out disappear automatically.
-  let visibleGroups = $derived(groupDiscovered(visible))
+  // are all filtered out disappear automatically. Folder scans are a single
+  // logical source, so they do not get one group per nested folder.
+  let visibleGroups = $derived(
+    scanKind === 'folder' && visible.length
+      ? [{ key: 'folder', label: t('discover.folderSource'), hint: appsDir, items: visible }]
+      : groupDiscovered(visible)
+  )
 
   // ---- REQ-0041 · AI classification ----
 
@@ -236,7 +252,8 @@
   // BUG-0012: the ONLY action that drops the previous results.
   function retryScan() {
     onrescan()
-    startScan()
+    if (scanKind === 'folder') onfolderscan()
+    else startScan()
   }
 
   // ---- import result panel (REQ-0014) ----
@@ -296,12 +313,16 @@
 
     {#if scanning}
       <div class="ph-section">
-        <p class="ph-hint" data-testid="scan-progress">{t('discover.scanning')}</p>
-        <div class="ph-row">
-          <button class="ph-btn" data-testid="scan-cancel" onclick={oncancel}>
-            {t('discover.cancelScan')}
-          </button>
-        </div>
+        <p class="ph-hint" data-testid="scan-progress">
+          {folderScanning ? t('discover.scanningFolder') : t('discover.scanning')}
+        </p>
+        {#if !folderScanning}
+          <div class="ph-row">
+            <button class="ph-btn" data-testid="scan-cancel" onclick={oncancel}>
+              {t('discover.cancelScan')}
+            </button>
+          </div>
+        {/if}
       </div>
     {:else if report}
       <div class="ph-section" data-testid="import-report">
@@ -370,6 +391,20 @@
             text={t('discover.hint', { dir: appsDir })}
           />
         </h3>
+        <div class="ph-quick-scan" data-testid="quick-scan">
+          <div class="ph-quick-copy">
+            <strong>{t('discover.quickScan')}</strong>
+            <span>{t('discover.quickScanHint', { dir: appsDir })}</span>
+          </div>
+          <button
+            type="button"
+            class="ph-btn accent"
+            data-testid="scan-folder"
+            disabled={scanning || busy}
+            onclick={onfolderscan}
+          >{t('discover.quickScanAction')}</button>
+        </div>
+        <p class="ph-hint ph-source-divider">{t('discover.orDrives')}</p>
         {#if items.length}
           <p class="ph-hint" data-testid="kept-results">
             {t('discover.keptResults', { n: items.length })}
@@ -442,6 +477,11 @@
           <span class="ph-hint" data-testid="found-count">
             {t('discover.foundCount', { n: visible.length })}
           </span>
+          {#if mergedCount > 0}
+            <span class="ph-hint" data-testid="merged-count" title={t('discover.mergedHint')}>
+              {t('discover.merged', { n: mergedCount })}
+            </span>
+          {/if}
           <button
             class="ph-btn"
             data-testid="discover-classify"
@@ -546,6 +586,11 @@
                       {/if}
                     </span>
                     <span class="ph-badge">{item.kind === 'folder' ? t('discover.kindFolder') : t('discover.kindFile')}</span>
+                    {#if item.duplicateCount}
+                      <span class="ph-badge" data-testid="merged-badge" title={t('discover.mergedHint')}>
+                        +{item.duplicateCount}
+                      </span>
+                    {/if}
                     <span class="ph-discover-size">{formatSize(item.size)}</span>
                     <span class="ph-discover-path" title={item.path}>{shortPath(item.path, 72)}</span>
                   </label>
@@ -609,6 +654,43 @@
 
 <style>
   /* Layout only: colours/badges come from the existing global .ph-* classes. */
+
+  .ph-quick-scan {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 11px;
+    margin-bottom: 4px;
+    border: var(--ph-border-width) solid var(--ph-accent);
+    background: var(--ph-bg-alt);
+  }
+
+  .ph-quick-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .ph-quick-copy strong {
+    color: var(--ph-text);
+    font-family: var(--ph-font-pixel);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .ph-quick-copy span {
+    color: var(--ph-text-muted);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ph-source-divider {
+    margin: 9px 0 5px;
+  }
 
   /* REQ-0021 result groups */
   .ph-discover-group {

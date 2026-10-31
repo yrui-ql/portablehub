@@ -19,6 +19,7 @@
   import { groupApps } from './lib/app-groups'
   import { listenSafe } from './lib/desktop'
   import { filterApps, type AutostartFilter } from './lib/filter'
+  import { dedupeDiscovered } from './lib/dedupe'
   import { collectTags } from './lib/tags'
   import { tagCss, tagText } from './lib/tag-style'
   import { PAGE_SIZE, nextPage, pageSlice } from './lib/pagination'
@@ -29,7 +30,6 @@
     AppEditPatch,
     AppView,
     Bootstrap,
-    Candidate,
     Collection,
     Discovered,
     ImportMode,
@@ -83,8 +83,8 @@
     linkPath: '',
     detail: ''
   })
-  let candidates = $state<Candidate[]>([])
-  let scanning = $state(false)
+  let folderScanning = $state(false)
+  let scanKind = $state<'discover' | 'folder'>('discover')
   let query = $state('')
   let activeGroup = $state('all')
   // REQ-0029: grouping is opt-in. REQ-0039 adds the mode behind the toggle.
@@ -743,16 +743,32 @@
     editing = null
   }
 
-  async function scan() {
-    if (scanning) return
-    scanning = true
+  // One review surface for both entry paths: the current Apps folder and a
+  // whole-drive discovery. Already-registered apps are filtered by the backend
+  // and same-name hits are merged before the modal sees them.
+  async function scanFolder() {
+    if (folderScanning || discovering) return
+    folderScanning = true
+    scanKind = 'folder'
+    showDiscover = true
+    importProgress = ''
+    importReport = null
     try {
-      candidates = await api.scanApps()
-      if (!candidates.length) say(t('app.noCandidates'))
+      const list = await api.scanApps()
+      const mapped = list.map((candidate) => ({
+        name: candidate.name,
+        path: candidate.relPath,
+        exe: candidate.relPath,
+        size: 0,
+        kind: candidate.relPath.toLowerCase().endsWith('.exe') ? ('file' as const) : ('folder' as const),
+        score: candidate.score
+      }))
+      discovered = dedupeDiscovered(mapped)
+      if (!discovered.length) say(t('app.noCandidates'))
     } catch (e) {
       say(String(e), true)
     } finally {
-      scanning = false
+      folderScanning = false
     }
   }
 
@@ -768,8 +784,9 @@
   }
 
   async function startScan(roots: string[]) {
-    if (discovering) return
+    if (discovering || folderScanning) return
     const token = ++scanToken
+    scanKind = 'discover'
     discovering = true
     scanCancelled = false
     importProgress = ''
@@ -779,21 +796,22 @@
       if (boot) boot.config.discoverRoots = [...discoverRoots]
       const report = await api.discoverApps(roots)
       if (token !== scanToken) return
-      discovered = report.items
+      const items = dedupeDiscovered(report.items)
+      discovered = items
       if (report.cancelled) {
         // Keep whatever the backend found before the cancellation, and mark the
         // results as incomplete (BUG-0008/REQ-0019 M4).
-        scanCancelled = report.items.length > 0
-        if (scanCancelled) say(t('discover.cancelledPartial', { n: report.items.length }))
+        scanCancelled = items.length > 0
+        if (scanCancelled) say(t('discover.cancelledPartial', { n: items.length }))
         else say(t('discover.cancelled'))
-      } else if (!report.items.length) {
+      } else if (!items.length) {
         scanCancelled = false
         say(t('discover.empty'))
       } else {
         scanCancelled = false
         if (!showDiscover) {
           // AC-19-3: the dialog is closed, so report the result on the main screen.
-          say(t('app.discoverDone', { n: report.items.length }))
+          say(t('app.discoverDone', { n: items.length }))
         }
       }
     } catch (e) {
@@ -860,23 +878,6 @@
     }
   }
 
-  async function addAll() {
-    // Report what actually happened: the backend/mock skip already-added
-    // candidates, so candidates.length is NOT the added count (BUG-0009 AC-B9-4).
-    const batch = candidates
-    try {
-      const before = apps.length
-      apps = await api.addApps(batch)
-      const added = Math.max(0, apps.length - before)
-      const skipped = Math.max(0, batch.length - added)
-      if (skipped > 0) say(t('app.addedSkipped', { added, skipped }))
-      else say(t('app.added', { n: added }))
-      candidates = []
-    } catch (e) {
-      say(String(e), true)
-    }
-  }
-
   async function changeTheme(id: string) {
     try {
       await api.setTheme(id)
@@ -914,7 +915,6 @@
     if (!boot) return
     try {
       boot.config = await api.setAppsDir(path)
-      candidates = await api.scanApps()
       say(t('app.appsDirChanged', { path: displayPath(boot.root, boot.config.appsDir) }))
     } catch (e) {
       say(String(e), true)
@@ -1094,11 +1094,8 @@
       {/if}
     </div>
     <div class="ph-toolbar-cluster ph-toolbar-primary">
-      <button class="ph-btn" data-testid="discover-btn" onclick={openDiscover}>
-        <Icon name="discover" />{t('app.discover')}
-      </button>
-      <button class="ph-btn" data-testid="scan-btn" disabled={scanning} onclick={scan}>
-        <Icon name="scan" />{scanning ? t('app.scanning') : t('app.scan')}
+      <button class="ph-btn accent" data-testid="discover-btn" onclick={openDiscover}>
+        <Icon name="discover" />{t('app.addApps')}
       </button>
       <button
         class="ph-btn"
@@ -1253,23 +1250,6 @@
     </div>
   {/if}
 
-  {#if candidates.length}
-    <div
-      class="ph-toolbar ph-candidates"
-      data-testid="candidates-bar"
-      style="border-bottom:var(--ph-border-width) solid var(--ph-border)"
-    >
-      <span class="ph-hint ph-candidate-count">{t('app.found', { n: candidates.length })}</span>
-      <div class="ph-candidate-list" data-testid="candidate-list">
-        {#each candidates as c (c.relPath)}
-          <span class="ph-badge on" data-testid="candidate-badge" title={c.relPath}>{c.name}</span>
-        {/each}
-      </div>
-      <button class="ph-btn accent" data-testid="add-all" onclick={addAll}>{t('app.addAll')}</button>
-      <button class="ph-btn" data-testid="ignore-candidates" onclick={() => (candidates = [])}>{t('app.ignore')}</button>
-    </div>
-  {/if}
-
   <div class="ph-main">
     <GroupSidebar
       groups={sidebarGroups}
@@ -1367,7 +1347,7 @@
               path: displayPath(boot?.root ?? '', boot?.config.appsDir ?? '')
             })}
           </div>
-          <button class="ph-btn" onclick={scan}>{t('app.scanDir')}</button>
+          <button class="ph-btn" onclick={scanFolder}>{t('app.scanDir')}</button>
         </div>
       {/if}
     </div>
@@ -1405,13 +1385,16 @@
     initialRoots={discoverRoots}
     {drives}
     existingNames={apps.map((a) => a.name)}
-    scanning={discovering}
+    scanning={discovering || folderScanning}
+    folderScanning={folderScanning}
+    {scanKind}
     cancelled={scanCancelled}
     busy={importing}
     progress={importProgress}
     report={importReport}
     {t}
     onscan={startScan}
+    onfolderscan={scanFolder}
     oncancel={cancelScan}
     onrescan={resetDiscover}
     onclose={() => (showDiscover = false)}

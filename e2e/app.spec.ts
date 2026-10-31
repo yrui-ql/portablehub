@@ -72,7 +72,7 @@ test('settings opens and language switches', async ({ page }) => {
   await expect(page.locator('.ph-settings-head strong')).toHaveText('Settings')
 
   await page.getByTestId('settings-close').click()
-  await expect(page.getByTestId('discover-btn')).toHaveText('Discover')
+  await expect(page.getByTestId('discover-btn')).toHaveText('Add apps')
 })
 
 test('titlebar buttons are inert in a plain browser', async ({ page }) => {

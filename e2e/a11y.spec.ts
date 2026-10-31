@@ -38,13 +38,15 @@ test('AC-B15-1: keyboard focus is visible on interactive elements', async ({ pag
 })
 
 test('AC-B15-2: toasts are announced as status', async ({ page }) => {
-  // Trigger a normal (polite) toast: scan returns candidates, then add them.
-  await page.getByTestId('scan-btn').click()
-  await page.getByTestId('add-all').click()
+  // Trigger a normal (polite) toast: an empty folder scan reports no new apps.
+  await page.evaluate(() => (window as any).__PH_MOCK__.setScanCandidates([]))
+  await page.getByTestId('discover-btn').click()
+  await page.getByTestId('scan-folder').click()
   const toast = page.locator('.ph-toast')
   await expect(toast).toBeVisible()
   await expect(toast).toHaveAttribute('role', 'status')
   await expect(toast).toHaveAttribute('aria-live', 'polite')
+  await page.getByTestId('discover-close').click()
 
   // Trigger an error toast: make the saved hotkey conflict, then save it.
   await page.evaluate(() => (window as any).__PH_MOCK__.setHotkeyConflict('Ctrl+Alt+P'))

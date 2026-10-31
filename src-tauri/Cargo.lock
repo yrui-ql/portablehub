@@ -2730,7 +2730,7 @@ dependencies = [
 
 [[package]]
 name = "portablehub"
-version = "1.14.1"
+version = "1.15.0"
 dependencies = [
  "base64 0.22.1",
  "dunce",

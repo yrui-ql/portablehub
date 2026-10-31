@@ -96,80 +96,74 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId('app-card')).toHaveCount(3)
 })
 
-test('AC-B8-1: candidate badges render inside the candidate bar', async ({ page }) => {
-  await page.getByTestId('scan-btn').click()
+test('folder scan opens the unified review list inside the add-apps modal', async ({ page }) => {
+  await page.getByTestId('discover-btn').click()
+  await expect(page.getByTestId('discover-modal')).toBeVisible()
+  await page.getByTestId('scan-folder').click()
 
-  const bar = page.getByTestId('candidates-bar')
-  await expect(bar).toBeVisible()
-  const badges = page.getByTestId('candidate-badge')
-  await expect(badges).toHaveCount(2)
-  await expect(badges).toHaveText(['Omega', 'Sigma'])
+  const rows = page.getByTestId('discover-row')
+  await expect(rows).toHaveCount(2)
+  await expect(rows).toContainText(['Omega', 'Sigma'])
 
-  const barBox = await boxOf(bar)
-  for (let i = 0; i < (await badges.count()); i++) {
-    const badge = badges.nth(i)
-    const badgeBox = await boxOf(badge)
-    expectInside(badgeBox, barBox)
-    // The old global rule pinned .ph-badge to the window (top: 4px / right: 4px),
-    // so an absolute-positioned badge would sit above/outside the bar.
-    expect(badgeBox.y, 'badge must be below the bar top edge').toBeGreaterThan(barBox.y)
-    expect(badgeBox.x + badgeBox.width, 'badge must not hug the window edge').toBeLessThan(
-      barBox.x + barBox.width
-    )
+  for (let i = 0; i < (await rows.count()); i++) {
+    const row = rows.nth(i)
+    const rowBox = await boxOf(row)
+    const badgeBox = await boxOf(row.locator('.ph-badge'))
+    expectInside(badgeBox, rowBox)
+    // The old global rule pinned .ph-badge to the window (top: 4px / right: 4px).
+    expect(badgeBox.y, 'badge must stay inside its row').toBeGreaterThan(rowBox.y)
+    expect(badgeBox.x + badgeBox.width).toBeLessThan(rowBox.x + rowBox.width)
   }
 
   // Scanning never changes the card grid.
   await expect(page.getByTestId('app-card')).toHaveCount(3)
 })
 
-test('AC-B8-4: many long candidates keep add/ignore visible and clickable', async ({ page }) => {
+test('many long candidates keep the review actions visible and clickable', async ({ page }) => {
   await setScanCandidates(page, LONG_CANDIDATE_NAMES)
-  await page.getByTestId('scan-btn').click()
-  await expect(page.getByTestId('candidate-badge')).toHaveCount(24)
+  await page.getByTestId('discover-btn').click()
+  await page.getByTestId('scan-folder').click()
+  await expect(page.getByTestId('discover-row')).toHaveCount(24)
 
   const viewport = page.viewportSize()
   expect(viewport).not.toBeNull()
   const { width, height } = viewport as { width: number; height: number }
 
-  // The actions must stay inside the viewport instead of being pushed off-screen.
-  for (const testId of ['add-all', 'ignore-candidates']) {
-    const button = page.getByTestId(testId)
-    await expect(button).toBeVisible()
-    const box = await boxOf(button)
-    expect(box.x, `${testId} left edge`).toBeGreaterThanOrEqual(0)
-    expect(box.y, `${testId} top edge`).toBeGreaterThanOrEqual(0)
-    expect(box.x + box.width, `${testId} right edge`).toBeLessThanOrEqual(width)
-    expect(box.y + box.height, `${testId} bottom edge`).toBeLessThanOrEqual(height)
+  // The actions stay inside the modal/viewport instead of being pushed off-screen.
+  for (const locator of [page.getByRole('button', { name: '全选', exact: true }), page.getByTestId('import-btn')]) {
+    await expect(locator).toBeVisible()
+    const box = await boxOf(locator)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(width)
+    expect(box.y + box.height).toBeLessThanOrEqual(height)
   }
 
-  // The badge list is what overflows (it wraps and scrolls), not the bar.
-  const listOverflows = await page.getByTestId('candidate-list').evaluate(
-    (el) => el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth
-  )
-  expect(listOverflows).toBe(true)
-
-  // Still clickable: all candidates are added, the bar closes, grid grows.
-  await page.getByTestId('add-all').click()
+  await page.getByRole('button', { name: '全选', exact: true }).click()
+  await expect(page.getByTestId('selected-count')).toContainText('24')
+  await page.getByTestId('import-btn').click()
+  await expect(page.getByTestId('import-report')).toBeVisible()
+  await page.getByTestId('report-close').click()
   await expect(page.getByTestId('app-card')).toHaveCount(27)
-  await expect(page.getByTestId('candidates-bar')).toHaveCount(0)
 })
 
-test('AC-B9-4: add-all reports the real added/skipped counts', async ({ page }) => {
-  // One already-added candidate (Alpha) mixed with one new one (Omega).
-  await setScanCandidates(page, ['Alpha', 'Omega'])
-  await page.getByTestId('scan-btn').click()
-  await expect(page.getByTestId('candidate-badge')).toHaveCount(2)
-  await page.getByTestId('add-all').click()
-  await expect(page.locator('.ph-toast')).toHaveText('已添加 1 个，跳过 1 个已存在')
-  await expect(page.getByTestId('app-card')).toHaveCount(4)
+test('same-name scan hits are merged and existing apps are hidden', async ({ page }) => {
+  // One already-added candidate (Alpha), one duplicated name (Omega), one new.
+  await setScanCandidates(page, ['Alpha', 'Omega', 'Omega', 'Sigma'])
+  await page.getByTestId('discover-btn').click()
+  await page.getByTestId('scan-folder').click()
 
-  // All candidates already exist: no false success count.
-  await setScanCandidates(page, ['Alpha', 'Beta'])
-  await page.getByTestId('scan-btn').click()
-  await expect(page.getByTestId('candidate-badge')).toHaveCount(2)
-  await page.getByTestId('add-all').click()
-  await expect(page.locator('.ph-toast')).toHaveText('已添加 0 个，跳过 2 个已存在')
-  await expect(page.getByTestId('app-card')).toHaveCount(4)
+  const rows = page.getByTestId('discover-row')
+  await expect(rows).toHaveCount(2)
+  await expect(page.getByTestId('merged-count')).toContainText('已合并 1 个同名位置')
+  await expect(page.getByTestId('merged-badge')).toHaveText('+1')
+  await expect(page.getByTestId('existing-hidden')).toContainText('已隐藏 1 个已存在')
+
+  await page.getByRole('button', { name: '全选', exact: true }).click()
+  await page.getByTestId('import-btn').click()
+  await expect(page.getByTestId('import-report')).toBeVisible()
+  await page.getByTestId('report-close').click()
+  await expect(page.getByTestId('app-card')).toHaveCount(5)
 })
 
 test('AC-B8-2: discover result and import report badges stay inside their rows', async ({ page }) => {

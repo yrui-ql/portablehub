@@ -132,6 +132,8 @@ export interface Discovered {
   score: number
   /** REQ-0041: semantic suggestion attached after AI/rules classification. */
   category?: string
+  /** UI-only: how many additional same-name locations were merged away. */
+  duplicateCount?: number
 }
 
 export type ImportMode = 'link' | 'move' | 'register'
