@@ -3,6 +3,38 @@
 All notable changes to PortableHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.15.0] - 2026-10-31
+
+### Added
+- One **Add apps** entry replaces the separate **Scan** and **Discover**
+  toolbar buttons. The modal offers a quick Apps-folder scan and whole-drive
+  discovery in one review surface.
+- Same-name scan/discover hits are merged into one row with a `+N` location
+  count; existing apps stay hidden.
+
+### Changed
+- Scan results now use the discover review list (search, grouping, selection,
+  import mode and report) instead of the overflowing inline candidate badges.
+- Folder scans default to register-only import, so apps already inside the
+  Apps folder are not copied or moved.
+
+### Fixed
+- Duplicate scan rows no longer clutter the main window or invite double
+  registration.
+
+## [1.14.1] - 2026-10-31
+
+### Added
+- Settings explains that the program folder is the folder containing
+  `PortableHub.exe` and moves with the app; the apps folder defaults to the
+  relative `Apps` path.
+- Test asserting the default apps folder is relative and `discover_roots` is
+  empty.
+
+### Fixed
+- Release binaries remap local cargo/rustup/workspace paths and fail the
+- Source comments and release artifacts no longer expose local install paths
+
 ## [1.14.0] - 2026-10-31
 
 ### Added
@@ -26,7 +58,6 @@ All notable changes to PortableHub are documented here. Format follows
 - Clicking **Scan** no longer freezes the window on large application folders.
 - Application startup no longer extracts icons for the whole library at once.
 - Release builds now remap local cargo/workspace paths and fail verification if a
-  machine-specific build path remains in the binary.
 
 ## [1.13.0] - 2026-10-31
 
