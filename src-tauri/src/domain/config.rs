@@ -284,6 +284,14 @@ mod tests {
     }
 
     #[test]
+    fn default_apps_dir_is_relative_and_portable() {
+        let cfg = Config::default();
+        assert_eq!(cfg.apps_dir, "Apps");
+        assert!(!Path::new(&cfg.apps_dir).is_absolute());
+        assert!(cfg.discover_roots.is_empty());
+    }
+
+    #[test]
     fn tag_styles_roundtrip() {
         let dir = tempdir("tag-styles");
         let mut cfg = Config::default();

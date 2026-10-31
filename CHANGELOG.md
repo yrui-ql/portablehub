@@ -3,6 +3,21 @@
 All notable changes to PortableHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.14.1] - 2026-10-31
+
+### Added
+- Settings explains that the program folder is the folder containing
+  `PortableHub.exe` and moves with the app; the apps folder defaults to the
+  relative `Apps` path.
+- Test asserting the default apps folder is relative and `discover_roots` is
+  empty.
+
+### Fixed
+- Release binaries remap local cargo/rustup/workspace paths and fail the
+  release-path audit if a machine-specific build path remains.
+- Source comments and release artifacts no longer expose local install paths
+  or usernames.
+
 ## [1.14.0] - 2026-10-31
 
 ### Added

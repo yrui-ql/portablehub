@@ -35,6 +35,14 @@ _cache\            # 图标、WebView2 数据、可删
 从 [Releases](https://github.com/yrui-ql/portablehub/releases) 下载 `PortableHub.exe`，
 放到任意目录运行即可；首次运行会在同目录生成 `Apps\`、`Themes\` 和配置。
 
+## 可移植性 / 路径规则
+
+- **程序目录 = `PortableHub.exe` 所在目录**，运行时计算，不写死任何开发机路径；移动整个文件夹，配置、缓存、WebView2 数据都跟着走。
+- **应用目录默认 `Apps`，相对程序目录存储**；设置里可改成其他已存在文件夹。程序目录内的目录会存相对路径，程序目录外的目录才存绝对路径（这是用户选择，不是默认写死）。
+- 自动创建的 `Apps\`、`Themes\`、`_cache\` 都在程序目录内，不写 `AppData`、不写注册表；唯一例外是用户主动开启的「开机自启」会写当前用户的 Startup 快捷方式。
+- 本地 `config.json`、`Apps\`、`Themes\` 不会进仓库；公开 Release 只带 exe，不携带任何人的配置或路径。
+- 设置 → 目录中「程序目录」右侧的 `i` 会说明这一点；显示的是当前 exe 的真实位置，不是代码里的常量。
+
 ## 构建
 
 前置：Node 22+、Rust（msvc）、MSVC Build Tools、WebView2 Runtime。

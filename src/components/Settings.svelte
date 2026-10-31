@@ -508,6 +508,11 @@
           <div class="ph-row">
             <span class="ph-label">{t('settings.programDir')}</span>
             <span>{boot.root}</span>
+            <InfoTip
+              testid="program-dir-info"
+              label={t('settings.programDirHintLabel')}
+              text={t('settings.programDirHint')}
+            />
           </div>
           <div class="ph-row">
             <label for="appsdir">{t('settings.appsDir')}</label>
