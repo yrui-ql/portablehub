@@ -18,6 +18,22 @@ test('renders cards and filters by search', async ({ page }) => {
   await expect(page.getByTestId('app-card')).toHaveCount(1)
   await expect(page.getByTestId('app-card')).toHaveAttribute('data-app-name', 'Beta')
 
+  // Right-click on empty space must not open the WebView2 browser menu.
+  const prevented = await page.evaluate(() => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    document.querySelector('.ph-grid-wrap')!.dispatchEvent(event)
+    return event.defaultPrevented
+  })
+  expect(prevented).toBe(true)
+  await expect(page.locator('.ph-menu')).toHaveCount(0)
+
+  // Right-click on a card opens the app-owned menu, with the app name as its header.
+  await page.locator('.ph-search').first().fill('')
+  await page.getByTestId('app-card').first().click({ button: 'right' })
+  await expect(page.locator('.ph-menu')).toBeVisible()
+  await expect(page.getByTestId('menu-title')).toContainText('Alpha')
+  await page.keyboard.press('Escape')
+
   await page.locator('.ph-search').first().fill('zzz')
   await expect(page.getByTestId('app-card')).toHaveCount(0)
   await expect(page.locator('.ph-empty')).toBeVisible()

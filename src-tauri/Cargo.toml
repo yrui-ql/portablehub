@@ -1,6 +1,6 @@
 [package]
 name = "portablehub"
-version = "1.15.0"
+version = "1.15.1"
 description = "PortableHub - portable software manager"
 authors = ["local"]
 edition = "2021"

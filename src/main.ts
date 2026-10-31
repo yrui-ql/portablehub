@@ -16,6 +16,15 @@ window.addEventListener('unhandledrejection', (e) => {
   log(`rejection: ${String(e.reason)}`)
 })
 
+// A desktop app owns right-click. Leaving WebView2's browser menu (Back,
+// Refresh, Save as, Print, Share) on cards or empty space makes the app feel
+// like a random web page. Text fields keep their native edit menu.
+window.addEventListener('contextmenu', (event) => {
+  const target = event.target as HTMLElement | null
+  if (target?.closest('input, textarea, [contenteditable="true"]')) return
+  event.preventDefault()
+})
+
 const target = document.getElementById('app')
 if (!target) throw new Error('#app not found')
 

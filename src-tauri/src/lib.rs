@@ -60,6 +60,23 @@ pub fn run() {
             }
             let _ = window.unminimize();
 
+            // WebView2's browser menu (Back / Refresh / Save as / Print / Share)
+            // has nothing to do with a desktop app. Disable it at the host
+            // level; the app renders its own menu for app cards.
+            #[cfg(windows)]
+            {
+                let menu_window = window.clone();
+                let _ = menu_window.with_webview(|webview| {
+                    unsafe {
+                        if let Ok(core) = webview.controller().CoreWebView2() {
+                            if let Ok(settings) = core.Settings() {
+                                let _ = settings.SetAreDefaultContextMenusEnabled(false);
+                            }
+                        }
+                    }
+                });
+            }
+
             // Safety net: if the frontend never signals readiness, still show the
             // window so the user is not left with an invisible process.
             let fallback = window.clone();

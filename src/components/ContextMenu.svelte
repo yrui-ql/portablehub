@@ -40,11 +40,16 @@
   } = $props()
 
   let left = $derived(Math.min(x, window.innerWidth - 190))
-  // Base items + up to 8 quick-tag entries; keep the whole menu inside the viewport.
-  let top = $derived(Math.min(y, window.innerHeight - (330 + Math.min(tags.length, 8) * 30)))
+  // Base items + header + up to 8 quick-tag entries; keep the whole menu inside the viewport.
+  let top = $derived(Math.min(y, window.innerHeight - (365 + Math.min(tags.length, 8) * 30)))
 </script>
 
 <div class="ph-menu" style:left={`${left}px`} style:top={`${top}px`} role="menu">
+  <div class="ph-menu-head" data-testid="menu-title">
+    <span class="ph-menu-app">{app.name}</span>
+    {#if app.autostart}<span class="ph-menu-state">{t('card.autostart')}</span>{/if}
+    {#if !app.exists}<span class="ph-menu-state bad">{t('card.missing')}</span>{/if}
+  </div>
   <button class="ph-menu-item" onclick={() => { onlaunch(app); onclose() }}>{t('menu.launch')}</button>
   <button class="ph-menu-item" onclick={() => { onreveal(app); onclose() }}>{t('menu.reveal')}</button>
   <button class="ph-menu-item" data-testid="menu-edit" onclick={() => { onedit(app); onclose() }}>{t('menu.edit')}</button>
@@ -78,3 +83,40 @@
     {t('menu.remove')}
   </button>
 </div>
+
+<style>
+  .ph-menu-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--ph-border);
+    background: var(--ph-bg-alt);
+    color: var(--ph-text-muted);
+  }
+
+  .ph-menu-app {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ph-text);
+    font-family: var(--ph-font-pixel);
+    font-size: 12px;
+  }
+
+  .ph-menu-state {
+    flex: none;
+    border: 1px solid var(--ph-border-light);
+    padding: 0 4px;
+    color: var(--ph-accent);
+    font-family: var(--ph-font-pixel);
+    font-size: 9px;
+  }
+
+  .ph-menu-state.bad {
+    border-color: var(--ph-danger);
+    color: var(--ph-danger);
+  }
+</style>

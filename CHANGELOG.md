@@ -3,6 +3,14 @@
 All notable changes to PortableHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.15.1] - 2026-10-31
+
+### Fixed
+- Right-click outside a card no longer opens WebView2's browser menu (Back,
+  Refresh, Save as, Print, Share). App cards keep the app-owned menu.
+- The app context menu now starts with the app name and state, so it is clear
+  which app the actions belong to.
+
 ## [1.15.0] - 2026-10-31
 
 ### Added
