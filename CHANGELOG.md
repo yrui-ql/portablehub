@@ -26,16 +26,9 @@ All notable changes to PortableHub are documented here. Format follows
 
 ### Added
 - Settings explains that the program folder is the folder containing
-  `PortableHub.exe` and moves with the app; the apps folder defaults to the
-  relative `Apps` path.
+  `PortableHub.exe`; the apps folder defaults to the relative `Apps` path.
 - Test asserting the default apps folder is relative and `discover_roots` is
   empty.
-
-### Fixed
-- Release binaries remap local cargo/rustup/workspace paths and fail the
-  release-path audit if a machine-specific build path remains.
-- Source comments and release artifacts no longer expose local install paths
-  or usernames.
 
 ## [1.14.0] - 2026-10-31
 
@@ -59,8 +52,6 @@ All notable changes to PortableHub are documented here. Format follows
 ### Fixed
 - Clicking **Scan** no longer freezes the window on large application folders.
 - Application startup no longer extracts icons for the whole library at once.
-- Release builds now remap local cargo/workspace paths and fail verification if a
-  machine-specific build path remains in the binary.
 
 ## [1.13.0] - 2026-10-31
 
