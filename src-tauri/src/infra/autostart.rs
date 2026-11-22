@@ -19,8 +19,9 @@ use windows_sys::Win32::System::Diagnostics::ToolHelp::{
 };
 
 use super::shortcut;
+use super::window;
 use crate::domain::config::Config;
-use crate::domain::launch;
+use crate::domain::launch::{self, LaunchMode};
 
 pub const AUTOSTART_ARG: &str = "--autostart";
 const INITIAL_DELAY_MS: u64 = 2500;
@@ -215,12 +216,23 @@ pub fn launch_flagged(root: &Path, cfg: &Config, dry_run: bool) -> Vec<LaunchRep
             continue;
         }
 
-        match launch::spawn(&plan) {
-            Ok(pid) => out.push(LaunchReport {
-                name: app.name.clone(),
-                ok: true,
-                message: format!("pid {pid}"),
-            }),
+        let quiet = app.quiet_start.unwrap_or(cfg.quiet_autostart);
+        let mode = if quiet {
+            LaunchMode::Quiet
+        } else {
+            LaunchMode::Visible
+        };
+        match launch::spawn(&plan, mode) {
+            Ok(pid) => {
+                if quiet {
+                    window::hide_windows_soon(pid);
+                }
+                out.push(LaunchReport {
+                    name: app.name.clone(),
+                    ok: true,
+                    message: format!("pid {pid}"),
+                })
+            }
             Err(e) => out.push(LaunchReport {
                 name: app.name.clone(),
                 ok: false,

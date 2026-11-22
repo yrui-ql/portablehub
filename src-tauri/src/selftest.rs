@@ -137,7 +137,7 @@ fn launch_spawn_check() -> Result<(), String> {
     let mut entry = AppEntry::new("cmd", shell);
     entry.args = vec!["/C".into(), "exit 0".into()];
     let plan = launch::plan(Path::new("."), &entry)?;
-    let pid = launch::spawn(&plan)?;
+    let pid = launch::spawn(&plan, launch::LaunchMode::Visible)?;
     if pid == 0 {
         return Err("spawn returned pid 0".into());
     }

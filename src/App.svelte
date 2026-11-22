@@ -111,6 +111,7 @@
   let drives = $state<string[]>([])
   let closeToTray = $state(true)
   let startHiddenAtLogin = $state(false)
+  let quietAutostart = $state(true)
   let hotkeyDraft = $state('')
   let locale = $state('zh-CN')
   let toast = $state<{ text: string; error: boolean } | null>(null)
@@ -577,6 +578,7 @@
       startup = b.startup
       closeToTray = b.config.closeToTray
       startHiddenAtLogin = b.config.startHiddenAtLogin
+      quietAutostart = b.config.quietAutostart ?? true
       locale = b.config.locale || 'zh-CN'
       hotkeyDraft = b.config.hotkey
       pixelIcons = b.config.pixelIcons ?? false
@@ -951,6 +953,16 @@
       await api.setStartHiddenAtLogin(enabled)
     } catch (e) {
       startHiddenAtLogin = !enabled
+      say(String(e), true)
+    }
+  }
+
+  async function toggleQuietAutostart(enabled: boolean) {
+    quietAutostart = enabled
+    try {
+      await api.setQuietAutostart(enabled)
+    } catch (e) {
+      quietAutostart = !enabled
       say(String(e), true)
     }
   }
@@ -1516,6 +1528,7 @@
     {themes}
     {startup}
     {closeToTray}
+    {quietAutostart}
     {pixelIcons}
     {pixelFont}
     {locale}
@@ -1539,6 +1552,7 @@
     onclosetotray={toggleTray}
     {startHiddenAtLogin}
     onstarthidden={toggleStartHidden}
+    onquietautostart={toggleQuietAutostart}
     onrunautostart={runAutostartNow}
     onquit={() => api.quit()}
   />

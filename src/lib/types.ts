@@ -13,6 +13,8 @@ export interface AppEntry {
   category: string
   /** Launch elevated via UAC (BUG-0023). */
   runAsAdmin: boolean
+  /** Start hidden; null/undefined follows the global autostart setting. */
+  quietStart?: boolean | null
 }
 
 export interface AppView extends AppEntry {
@@ -27,6 +29,8 @@ export interface AppEditPatch {
   args: string[]
   workDir: string
   runAsAdmin?: boolean
+  /** null clears the per-app override; omitted leaves it untouched. */
+  quietStart?: boolean | null
   category?: string
 }
 
@@ -39,6 +43,8 @@ export interface Config {
   launchAtLogin: boolean
   startHiddenAtLogin: boolean
   closeToTray: boolean
+  /** Start autostart entries without showing their windows. */
+  quietAutostart: boolean
   autostartStaggerMs: number
   appsDir: string
   apps: AppEntry[]

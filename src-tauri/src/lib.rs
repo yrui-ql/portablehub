@@ -196,6 +196,7 @@ pub fn run() {
             commands::save_collections,
             commands::set_favorites,
             commands::set_start_hidden_at_login,
+            commands::set_quiet_autostart,
             commands::set_app_tags,
             commands::run_autostart_now,
             commands::show_main_window,

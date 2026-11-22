@@ -3,6 +3,22 @@
 All notable changes to PortableHub are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.15.2] - 2026-11-22
+
+### Added
+- Apps flagged for autostart now start without showing a window. Startup
+  entries are created with `SW_HIDE`, and a short-lived watcher hides any
+  top-level window the new process still opens (Electron/Qt apps call
+  `show()` themselves).
+- Settings → Startup → **Start autostart items hidden**, and a per-app
+  three-state choice in the edit dialog: follow the global setting, start
+  hidden, or show the window. Clicking an app in the hub always opens it
+  normally.
+
+### Fixed
+- Opening the hub no longer scatters autostart windows across the desktop at
+  login.
+
 ## [1.15.1] - 2026-10-31
 
 ### Fixed

@@ -4,6 +4,10 @@
 //! launches that fail with `ERROR_ELEVATION_REQUIRED` (os error 740), are
 //! retried through `ShellExecuteW("runas")`, which shows the UAC prompt. An
 //! elevated process has no usable pid, so `pid` is 0 and `elevated` is true.
+//!
+//! `LaunchMode::Quiet` asks Windows to create the process with `SW_HIDE`; that
+//! covers apps which honour the startup show state. Apps that call `ShowWindow`
+//! themselves are handled by `infra::window`, which watches the new process.
 
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -20,6 +24,18 @@ const ERROR_CANCELLED: u32 = 1223;
 /// `SW_SHOWNORMAL`; avoids pulling in the WindowsAndMessaging feature.
 #[cfg(windows)]
 const SW_SHOWNORMAL: i32 = 1;
+/// `SW_HIDE`.
+#[cfg(windows)]
+const SW_HIDE: i32 = 0;
+
+/// How the started app should present itself.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LaunchMode {
+    /// Normal launch: the app decides whether to show a window.
+    Visible,
+    /// Start without a visible window (autostart default).
+    Quiet,
+}
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -91,27 +107,27 @@ fn quote(s: &str) -> String {
 
 /// Spawn without elevation and return the child pid (kept for callers such as
 /// autostart that only need "did it start").
-pub fn spawn(plan: &LaunchPlan) -> Result<u32, String> {
-    Ok(spawn_with_receipt(plan)?.pid)
+pub fn spawn(plan: &LaunchPlan, mode: LaunchMode) -> Result<u32, String> {
+    Ok(spawn_with_receipt(plan, mode)?.pid)
 }
 
 /// Spawn, elevating through UAC when requested or required (os error 740).
-pub fn spawn_with_receipt(plan: &LaunchPlan) -> Result<LaunchOutcome, String> {
+pub fn spawn_with_receipt(plan: &LaunchPlan, mode: LaunchMode) -> Result<LaunchOutcome, String> {
     if plan.run_as_admin {
-        run_as_admin(plan)?;
+        run_as_admin(plan, mode)?;
         return Ok(LaunchOutcome {
             pid: 0,
             elevated: true,
         });
     }
-    match spawn_command(plan) {
-        Ok(child) => Ok(LaunchOutcome {
-            pid: child.id(),
+    match spawn_command(plan, mode) {
+        Ok(pid) => Ok(LaunchOutcome {
+            pid,
             elevated: false,
         }),
         Err(e) if e.raw_os_error() == Some(ERROR_ELEVATION_REQUIRED) => {
             // The exe requires elevation: fall back to the UAC prompt.
-            run_as_admin(plan)?;
+            run_as_admin(plan, mode)?;
             Ok(LaunchOutcome {
                 pid: 0,
                 elevated: true,
@@ -121,17 +137,90 @@ pub fn spawn_with_receipt(plan: &LaunchPlan) -> Result<LaunchOutcome, String> {
     }
 }
 
-fn spawn_command(plan: &LaunchPlan) -> std::io::Result<std::process::Child> {
+fn spawn_command(plan: &LaunchPlan, mode: LaunchMode) -> std::io::Result<u32> {
+    match mode {
+        LaunchMode::Visible => spawn_visible(plan),
+        LaunchMode::Quiet => spawn_hidden(plan),
+    }
+}
+
+fn spawn_visible(plan: &LaunchPlan) -> std::io::Result<u32> {
     let mut cmd = Command::new(&plan.program);
     cmd.args(&plan.args);
     if !plan.cwd.is_empty() {
         cmd.current_dir(PathBuf::from(&plan.cwd));
     }
-    cmd.spawn()
+    cmd.spawn().map(|child| child.id())
+}
+
+/// Create the process with `SW_HIDE`. `Command` cannot express a startup show
+/// state, so this goes straight to `CreateProcessW`.
+#[cfg(windows)]
+fn spawn_hidden(plan: &LaunchPlan) -> std::io::Result<u32> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError};
+    use windows_sys::Win32::System::Threading::{
+        CreateProcessW, PROCESS_INFORMATION, STARTF_USESHOWWINDOW, STARTUPINFOW,
+    };
+
+    fn wide(value: &str) -> Vec<u16> {
+        std::ffi::OsStr::new(value)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect()
+    }
+
+    let mut program = wide(&plan.program);
+    let mut command_line = wide(&plan.command_line);
+    let cwd = if plan.cwd.is_empty() {
+        Vec::new()
+    } else {
+        wide(&plan.cwd)
+    };
+
+    let mut startup: STARTUPINFOW = unsafe { std::mem::zeroed() };
+    startup.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
+    startup.dwFlags = STARTF_USESHOWWINDOW;
+    startup.wShowWindow = SW_HIDE as u16;
+    let mut process: PROCESS_INFORMATION = unsafe { std::mem::zeroed() };
+
+    let created = unsafe {
+        CreateProcessW(
+            program.as_mut_ptr(),
+            command_line.as_mut_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            0,
+            0,
+            std::ptr::null(),
+            if cwd.is_empty() {
+                std::ptr::null()
+            } else {
+                cwd.as_ptr()
+            },
+            &startup,
+            &mut process,
+        )
+    };
+    if created == 0 {
+        return Err(std::io::Error::from_raw_os_error(
+            unsafe { GetLastError() } as i32
+        ));
+    }
+    unsafe {
+        let _ = CloseHandle(process.hProcess);
+        let _ = CloseHandle(process.hThread);
+    }
+    Ok(process.dwProcessId)
+}
+
+#[cfg(not(windows))]
+fn spawn_hidden(plan: &LaunchPlan) -> std::io::Result<u32> {
+    spawn_visible(plan)
 }
 
 #[cfg(windows)]
-fn run_as_admin(plan: &LaunchPlan) -> Result<(), String> {
+fn run_as_admin(plan: &LaunchPlan, mode: LaunchMode) -> Result<(), String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Foundation::GetLastError;
     use windows_sys::Win32::UI::Shell::ShellExecuteW;
@@ -155,6 +244,10 @@ fn run_as_admin(plan: &LaunchPlan) -> Result<(), String> {
     } else {
         Some(wide(&plan.cwd))
     };
+    let show = match mode {
+        LaunchMode::Visible => SW_SHOWNORMAL,
+        LaunchMode::Quiet => SW_HIDE,
+    };
 
     let result = unsafe {
         ShellExecuteW(
@@ -168,7 +261,7 @@ fn run_as_admin(plan: &LaunchPlan) -> Result<(), String> {
             cwd.as_ref()
                 .map(|value| value.as_ptr())
                 .unwrap_or(std::ptr::null()),
-            SW_SHOWNORMAL,
+            show,
         )
     } as isize;
 
@@ -195,7 +288,7 @@ fn run_as_admin(plan: &LaunchPlan) -> Result<(), String> {
 }
 
 #[cfg(not(windows))]
-fn run_as_admin(_plan: &LaunchPlan) -> Result<(), String> {
+fn run_as_admin(_plan: &LaunchPlan, _mode: LaunchMode) -> Result<(), String> {
     Err("当前平台不支持以管理员身份启动".to_string())
 }
 
@@ -246,11 +339,23 @@ mod tests {
         let mut app = AppEntry::new("cmd", shell);
         app.args = vec!["/C".into(), "exit 0".into()];
         let p = plan(&dir, &app).unwrap();
-        let outcome = spawn_with_receipt(&p).expect("spawn should succeed");
+        let outcome =
+            spawn_with_receipt(&p, LaunchMode::Visible).expect("spawn should succeed");
         assert!(!outcome.elevated);
         assert!(outcome.pid > 0);
         // The plain helper stays compatible with autostart.
-        assert!(spawn(&p).unwrap() > 0);
+        assert!(spawn(&p, LaunchMode::Visible).unwrap() > 0);
+    }
+
+    #[test]
+    fn quiet_launch_creates_a_hidden_process() {
+        let dir = std::env::temp_dir();
+        let shell = std::env::var("COMSPEC").expect("COMSPEC must be set on Windows");
+        let mut app = AppEntry::new("cmd", shell);
+        app.args = vec!["/C".into(), "exit 0".into()];
+        let p = plan(&dir, &app).unwrap();
+        let pid = spawn(&p, LaunchMode::Quiet).expect("quiet spawn should succeed");
+        assert!(pid > 0);
     }
 
     #[test]

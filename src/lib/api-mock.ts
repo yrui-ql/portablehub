@@ -49,6 +49,7 @@ let config: Config = {
   launchAtLogin: false,
   startHiddenAtLogin: false,
   closeToTray: true,
+  quietAutostart: true,
   autostartStaggerMs: 2000,
   appsDir: 'Apps',
   apps: [],
@@ -378,6 +379,9 @@ export const mockApi = {
   },
   setStartHiddenAtLogin: async (enabled: boolean): Promise<void> => {
     config = { ...config, startHiddenAtLogin: enabled }
+  },
+  setQuietAutostart: async (enabled: boolean): Promise<void> => {
+    config = { ...config, quietAutostart: enabled }
   },
   auditApps: async (): Promise<AppAudit[]> => structuredClone(auditOverride ?? auditFromApps()),
   exportBundle: async (target: string): Promise<ExportReport> => {

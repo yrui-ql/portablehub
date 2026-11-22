@@ -58,6 +58,7 @@
     themes,
     startup,
     closeToTray,
+    quietAutostart,
     pixelIcons,
     pixelFont,
     locale,
@@ -78,6 +79,7 @@
     onclosetotray,
     startHiddenAtLogin,
     onstarthidden,
+    onquietautostart,
     onrunautostart,
     onquit
   }: {
@@ -85,6 +87,7 @@
     themes: ThemeSummary[]
     startup: StartupStatus
     closeToTray: boolean
+    quietAutostart: boolean
     pixelIcons: boolean
     pixelFont: boolean
     startHiddenAtLogin: boolean
@@ -105,6 +108,7 @@
     onautostart: (enabled: boolean) => void
     onclosetotray: (enabled: boolean) => void
     onstarthidden: (enabled: boolean) => void
+    onquietautostart: (enabled: boolean) => void
     onrunautostart: () => void
     onquit: () => void
   } = $props()
@@ -475,6 +479,22 @@
               testid="start-hidden-info"
               label={t('settings.startHiddenHintLabel')}
               text={t('settings.startHiddenHint')}
+            />
+          </div>
+          <div class="ph-row">
+            <label for="quiet-autostart">{t('settings.quietAutostart')}</label>
+            <input
+              id="quiet-autostart"
+              class="ph-check"
+              type="checkbox"
+              data-testid="quiet-autostart"
+              checked={quietAutostart}
+              onchange={(e) => onquietautostart(e.currentTarget.checked)}
+            />
+            <InfoTip
+              testid="quiet-autostart-info"
+              label={t('settings.quietAutostartHintLabel')}
+              text={t('settings.quietAutostartHint')}
             />
           </div>
           <div class="ph-row">

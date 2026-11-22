@@ -1,6 +1,6 @@
 [package]
 name = "portablehub"
-version = "1.15.1"
+version = "1.15.2"
 description = "PortableHub - portable software manager"
 authors = ["local"]
 edition = "2021"
@@ -36,7 +36,7 @@ log = "0.4"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 # ShellExecuteW("runas") for the "run as administrator" launch path (BUG-0023).
 # 0.59 is already in Cargo.lock (transitive), so no new crate version is pulled.
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_System_Diagnostics_ToolHelp"] }
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Threading"] }
 
 [profile.release]
 codegen-units = 1

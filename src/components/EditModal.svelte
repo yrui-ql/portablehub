@@ -34,6 +34,13 @@
   // BUG-0023: apps that need elevation are flagged here; the backend launches
   // them through the Windows "runas" path. Older fixtures may omit the field.
   let runAsAdmin = $state(untrack(() => app.runAsAdmin === true))
+  // Three states: follow the global autostart setting, force quiet, or force
+  // a visible window. `null` in the patch clears the per-app override.
+  let quietMode = $state(
+    untrack(() =>
+      app.quietStart === true ? 'quiet' : app.quietStart === false ? 'visible' : 'inherit'
+    )
+  )
   let category = $state(untrack(() => app.category ?? ''))
   let error = $state('')
   let saving = $state(false)
@@ -102,6 +109,7 @@
         args: parseArgs(argsText),
         workDir: workDir.trim(),
         runAsAdmin,
+        quietStart: quietMode === 'inherit' ? null : quietMode === 'quiet',
         category
       })
     } catch (reason) {
@@ -230,6 +238,26 @@
             testid="edit-run-as-admin-info"
             label={t('edit.runAsAdminHintLabel')}
             text={t('edit.runAsAdminHint')}
+          />
+        </div>
+
+        <div class="ph-row">
+          <label for="edit-quiet-start">{t('edit.quietStart')}</label>
+          <select
+            id="edit-quiet-start"
+            class="ph-select"
+            data-testid="edit-quiet-start"
+            bind:value={quietMode}
+            disabled={saving}
+          >
+            <option value="inherit">{t('edit.quietStartInherit')}</option>
+            <option value="quiet">{t('edit.quietStartQuiet')}</option>
+            <option value="visible">{t('edit.quietStartVisible')}</option>
+          </select>
+          <InfoTip
+            testid="edit-quiet-start-info"
+            label={t('edit.quietStartHintLabel')}
+            text={t('edit.quietStartHint')}
           />
         </div>
       </section>

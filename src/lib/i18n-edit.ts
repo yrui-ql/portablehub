@@ -23,7 +23,13 @@ export const enEdit: Record<string, string> = {
   'edit.saved': 'Saved {name}',
   'edit.runAsAdmin': 'Run as administrator',
   'edit.runAsAdminHint': 'Shows a UAC prompt on every launch. Use it for tools that change drivers, registry or network settings.',
-  'edit.runAsAdminHintLabel': 'Administrator help'
+  'edit.runAsAdminHintLabel': 'Administrator help',
+  'edit.quietStart': 'When started automatically',
+  'edit.quietStartInherit': 'Follow the global setting',
+  'edit.quietStartQuiet': 'Start hidden',
+  'edit.quietStartVisible': 'Show the window',
+  'edit.quietStartHint': 'Only affects autostart. Clicking the app in the hub always opens it normally.',
+  'edit.quietStartHintLabel': 'Autostart behavior help'
 }
 
 export const zhEdit: Record<string, string> = {
@@ -49,5 +55,11 @@ export const zhEdit: Record<string, string> = {
   'edit.saved': '已保存 {name}',
   'edit.runAsAdmin': '以管理员身份运行',
   'edit.runAsAdminHint': '每次启动都会弹出 UAC 授权。适用于需要改驱动、注册表或网络设置的工具。',
-  'edit.runAsAdminHintLabel': '管理员运行说明'
+  'edit.runAsAdminHintLabel': '管理员运行说明',
+  'edit.quietStart': '自启时的窗口',
+  'edit.quietStartInherit': '跟随全局设置',
+  'edit.quietStartQuiet': '静默启动（隐藏窗口）',
+  'edit.quietStartVisible': '显示窗口',
+  'edit.quietStartHint': '只影响自启；在面板里手动点击始终正常打开窗口。',
+  'edit.quietStartHintLabel': '自启行为说明'
 }

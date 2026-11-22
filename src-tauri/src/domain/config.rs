@@ -44,6 +44,10 @@ pub struct AppEntry {
     /// Launch elevated via UAC (`ShellExecuteW` "runas", BUG-0023).
     #[serde(default)]
     pub run_as_admin: bool,
+    /// Per-app override for `Config::quiet_autostart`; `None` follows the
+    /// global setting. Kept optional so one switch can govern every entry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quiet_start: Option<bool>,
 }
 
 fn default_true() -> bool {
@@ -65,6 +69,7 @@ impl AppEntry {
             tags: Vec::new(),
             category: String::new(),
             run_as_admin: false,
+            quiet_start: None,
         }
     }
 }
@@ -116,6 +121,9 @@ pub struct Config {
     pub launch_at_login: bool,
     pub start_hidden_at_login: bool,
     pub close_to_tray: bool,
+    /// Start autostart entries without showing their windows. Entries may
+    /// override this through `AppEntry::quiet_start`.
+    pub quiet_autostart: bool,
     pub autostart_stagger_ms: u64,
     pub apps_dir: String,
     pub apps: Vec<AppEntry>,
@@ -144,6 +152,7 @@ impl Default for Config {
             launch_at_login: false,
             start_hidden_at_login: false,
             close_to_tray: true,
+            quiet_autostart: true,
             autostart_stagger_ms: 2000,
             apps_dir: "Apps".to_string(),
             apps: Vec::new(),

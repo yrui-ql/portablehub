@@ -54,6 +54,8 @@ pub struct AppView {
     pub category: String,
     /// Launch elevated via UAC (BUG-0023).
     pub run_as_admin: bool,
+    /// Start hidden; `None` follows the global autostart setting.
+    pub quiet_start: Option<bool>,
     pub exists: bool,
     pub icon: Option<String>,
 }
@@ -88,6 +90,7 @@ fn view_with_icon(root: &std::path::Path, app: &AppEntry, with_icon: bool) -> Ap
         tags: app.tags.clone(),
         category: app.category.clone(),
         run_as_admin: app.run_as_admin,
+        quiet_start: app.quiet_start,
         exists: exe.exists(),
         icon: if with_icon { icon::get(root, &exe) } else { None },
     }
@@ -332,8 +335,21 @@ pub struct AppPatch {
     pub skip_if_running: Option<bool>,
     /// BUG-0023: launch elevated via UAC.
     pub run_as_admin: Option<bool>,
+    /// `Some(None)` clears the per-app override (follow the global setting);
+    /// an absent field leaves the current value untouched.
+    #[serde(default, deserialize_with = "deserialize_optional_bool")]
+    pub quiet_start: Option<Option<bool>>,
     /// Manual semantic category; empty string clears it.
     pub category: Option<String>,
+}
+
+/// Record that the client sent the field even when it sent `null`, which
+/// `Option<bool>` alone would read as "absent".
+fn deserialize_optional_bool<'de, D>(deserializer: D) -> Result<Option<Option<bool>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<bool>::deserialize(deserializer).map(Some)
 }
 
 impl Default for AppPatch {
@@ -347,6 +363,7 @@ impl Default for AppPatch {
             autostart_delay_ms: None,
             skip_if_running: None,
             run_as_admin: None,
+            quiet_start: None,
             category: None,
         }
     }
@@ -384,6 +401,9 @@ pub fn update_app(state: State<'_, AppState>, id: String, patch: AppPatch) -> Re
         }
         if let Some(v) = patch.run_as_admin {
             app.run_as_admin = v;
+        }
+        if let Some(v) = patch.quiet_start {
+            app.quiet_start = v;
         }
         if let Some(v) = patch.category {
             let category = v.trim();
@@ -637,7 +657,8 @@ pub fn launch_app(state: State<'_, AppState>, id: String) -> Result<LaunchReceip
         .find(|a| a.id == id)
         .ok_or_else(|| format!("应用不存在：{id}"))?;
     let plan = launch::plan(&state.root, app)?;
-    let outcome = launch::spawn_with_receipt(&plan)?;
+    // A click in the launcher is an explicit "show it" request.
+    let outcome = launch::spawn_with_receipt(&plan, launch::LaunchMode::Visible)?;
     Ok(LaunchReceipt {
         pid: outcome.pid,
         command_line: plan.command_line,
@@ -999,6 +1020,15 @@ pub fn set_start_hidden_at_login(
     {
         let mut cfg = state.config.lock().unwrap();
         cfg.start_hidden_at_login = enabled;
+    }
+    persist(&state)
+}
+
+#[tauri::command]
+pub fn set_quiet_autostart(state: State<'_, AppState>, enabled: bool) -> Result<(), String> {
+    {
+        let mut cfg = state.config.lock().unwrap();
+        cfg.quiet_autostart = enabled;
     }
     persist(&state)
 }

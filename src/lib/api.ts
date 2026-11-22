@@ -74,6 +74,7 @@ const realApi = {
   setCloseToTray: (enabled: boolean) => invoke<void>('set_close_to_tray', { enabled }),
   setStartHiddenAtLogin: (enabled: boolean) =>
     invoke<void>('set_start_hidden_at_login', { enabled }),
+  setQuietAutostart: (enabled: boolean) => invoke<void>('set_quiet_autostart', { enabled }),
   auditApps: () => invoke<AppAudit[]>('audit_apps'),
   exportBundle: (target: string) => invoke<ExportReport>('export_bundle', { target }),
   runAutostartNow: () => invoke<LaunchReport[]>('run_autostart_now'),
